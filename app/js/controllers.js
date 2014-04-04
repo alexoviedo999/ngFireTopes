@@ -7,12 +7,6 @@ angular.module('myApp.controllers', [])
       syncData('syncedValue').$bind($scope, 'syncedValue');
    }])
 
-   .controller('HearthCtrl', ['$scope', 'feedManager', '$location', '$dialog', 'disposeOnLogout', 'feedScopeUtils', 'syncData', function($scope, feedManager, $location, $dialog, disposeOnLogout, feedScopeUtils, syncData) {
-      var pid = $scope.auth.provider;
-      var uid = $scope.auth.user;
-      var feedMgr = $scope.feedManager = new feedManager(pid, uid, disposeOnLogout);
-      feedScopeUtils($scope, feedMgr);
-
       // 2-way synchronize of the articles this user has marked as read
       $scope.readArticles = syncData(['user', pid, uid, 'read'], 250);
 
