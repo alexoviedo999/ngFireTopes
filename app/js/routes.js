@@ -10,6 +10,12 @@ angular.module('myApp.routes', ['ngRoute'])
          controller: 'HomeCtrl'
       });
 
+      $routeProvider.when('/feeds', {
+         templateUrl: 'partials/feeds.html',
+         controller: 'FeedsCtrl',
+         pathTo: '/feeds'
+      });
+
       $routeProvider.when('/chat', {
          templateUrl: 'partials/chat.html',
          controller: 'ChatCtrl'

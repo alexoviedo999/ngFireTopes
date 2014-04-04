@@ -1,138 +1,39 @@
 'use strict';
 
 /* Controllers */
+angular.module('myApp.factory', [])
+.factory('FeedService',['$http', function ($http) {
+      return {
+        parseFeed : function (url) {
+          return $http.jsonp('//ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=50&callback=JSON_CALLBACK&q=' + encodeURIComponent(url));
+        },
+      }
+    }]);
 
 angular.module('myApp.controllers', [])
-   .controller('HomeCtrl', ['$scope', 'syncData', function($scope, syncData) {
+   .controller('HomeCtrl', ['$scope', 'syncData', 'FeedService', function ($scope, syncData, Feed) {
       syncData('syncedValue').$bind($scope, 'syncedValue');
-   }])
-
-      // 2-way synchronize of the articles this user has marked as read
-      $scope.readArticles = syncData(['user', pid, uid, 'read'], 250);
-
-      $scope.addFeed = function(feedId) {
-         feedMgr.addFeed(feedId, function(errCode, errMsg) {
-            $location.search('feed', feedId);
-            $scope.startLoading();
-            $scope.articles.$on('change', function() { $scope.stopLoading(); });
-         });
-      };
-
-      $scope.removeFeed = function(feedId, $event) {
-         $dialog.dialog({
-            backdrop: true,
-            keyboard: true,
-            backdropClick: true,
-            templateUrl: 'partials/confirmDialog.html',
-            controller: 'ConfirmDialogCtrl'
-         }).open().then(function(confirmed) {
-            if( confirmed ) {
-               if( $scope.activeFeed === feedId ) {
-                  $scope.activeFeed = null;
-                  $location.replace();
-                  $location.search('feed', null);
-               }
-               if( $event ) {
-                  $event.preventDefault();
-                  $event.stopPropagation();
-               }
-               feedMgr.removeFeed(feedId);
-               $scope.readArticles.$remove(feedId);
-            }
-         });
-      };
-   }])
-
-
-   .controller('ArticleCtrl', ['$scope', function($scope) {
-      var ABSOLUTE_WIDTH = 850;
-
-      $scope.opts = {
-         dialogClass: 'modal article'
-      };
-
-      $scope.open = function(article) {
-         if( !article ) { $scope.close(); }
-         else {
-            $scope.article = article;
-            setNext(article);
-            setPrev(article);
-            $scope.isOpen = true;
-            resize();
-            if( angular.element(window).width() <= ABSOLUTE_WIDTH ) {
-               window.scrollTo(0,0);
-            }
-            $scope.markArticleRead(article);
-         }
-      };
-
-      $scope.close = function() {
-         $scope.isOpen = false;
-      };
-
-      $scope.closed = function() {
-         $scope.article = null;
-         $scope.isOpen = false;
-      };
-
-      // resize height of element dynamically
-      var resize = _.debounce(function() {
-         if( $scope.isOpen ) {
-            var $article = angular.element('div.modal.article');
-            var maxHeight = 'none';
-            if( angular.element(window).width() > ABSOLUTE_WIDTH ) {
-               var windowHeight = angular.element(window).height();
-               var headHeight = $article.find('.modal-header').outerHeight() + $article.find('.modal-footer').outerHeight();
-               maxHeight = (windowHeight * .8 - headHeight)+'px';
-            }
-            $article.find('.modal-body').css('max-height', maxHeight);
-         }
-      }, 50);
-
-      function setNext(article) {
-         var next = angular.element('#'+article.$id).next('article');
-         $scope.next = next.length? $scope.articles.find(next.attr('id')) : null;
+      $scope.loadButonText = "Load";
+      $scope.loadFeed = function (e) {
+        Feed.parseFeed($scope.feedSrc).then(function (res) {
+            $scope.loadButonText = angular.element(e.target).text();
+            $scope.feeds = res.data.responseData.feed.entries;
+        });
       }
+   }])
 
-      function setPrev(article) {
-         var prev = angular.element('#'+article.$id).prev('article');
-         $scope.prev = prev.length? $scope.articles.find(prev.attr('id')) : null;
+
+   .controller("FeedsCtrl", ['$scope','FeedService', function ($scope, Feed) {
+      $scope.loadButonText = "Load";
+      $scope.loadFeed = function (e) {
+        Feed.parseFeed($scope.feedSrc).then(function (res) {
+            $scope.loadButonText = angular.element(e.target).text();
+            $scope.feeds = res.data.responseData.feed.entries;
+        });
       }
-
-      angular.element(window).bind('resize', resize);
-
-      $scope.$on('modal:article', function(event, article) {
-         $scope.open(article);
-      });
-
    }])
 
-   .controller('CustomFeedCtrl', ['$scope', function($scope) {
-      var $log = $scope.$log;
-      $scope.isOpen = false;
-
-      $scope.$on('modal:customFeed', function() {
-         $scope.open();
-      });
-
-      $scope.open = function() {
-         $scope.isOpen = true;
-      };
-
-      $scope.close = function() {
-         $scope.isOpen = false;
-      };
-
-      $scope.add = function() {
-         $log.debug('adding custom feed', $scope.title, $scope.url);
-         $scope.feedManager.addFeed({url: $scope.url, title: $scope.title});
-         $scope.close();
-         $scope.title = null;
-         $scope.url = null;
-      };
-   }])
-
-  .controller('ChatCtrl', ['$scope', 'syncData', function($scope, syncData) {
+  .controller('ChatCtrl', ['$scope', 'syncData', function ($scope, syncData) {
       $scope.newMessage = null;
 
       // constrain number of messages by limit into syncData
